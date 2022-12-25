@@ -1,0 +1,544 @@
+import random
+import threading
+import playsound
+import os
+import blessed
+import sys
+import time
+term = blessed.Terminal()
+loop_game = True
+
+def values():
+    #Définition de tous les élements de base nécessaire au lancement du jeu.
+    global list_bloc, grid, bloc, score, reponse, tentative, difficulty, loop_ingame 
+    list_bloc = [#Niveau 1
+                [[[[1,4,4],[1,1,1]], [[4,4,1],[1,1,1]], [[1,1,4],[4,1,4],[4,1,4]], [[1,1,1],[4,4,1]]], #L
+                [[[1,1,4]],[[1,4,4],[1,4,4]]], #Petite Barre
+                [[[1,4,4],[1,1,4]], [[4,1,4],[1,1,4]], [[1,1,4],[4,1,4]],[[1,1,4],[1,4,4]]],  #Petit L
+                [[[1,1,1],[4,1,4]], [[1,4,4],[1,1,4],[1,4,4]],[[4,1,4],[1,1,1]],[[4,1,4],[1,1,4],[4,1,4]]],   #T
+                [[[1,1,1],[1,1,1],[1,1,1]]],  #Carré
+                [[[1,1,4],[1,1,4]]],  #Petit carré 
+                [[[1,1,4],[4,1,1]],[[4,1,4],[1,1,4],[1,4,4]]]], #z
+                #Niveau 2
+                [[[[1,4,4],[1,4,4],[1,4,4]],[[1,1,1]]], #Barre
+                [[[1,4,4],[1,1,4],[1,1,4]],[[4,1,1],[1,1,1]],[[1,1,4],[1,1,4],[4,1,4]],[[1,1,1],[4,1,1]]], #T
+                [[[1,4,4],[4,1,4],[4,4,1]],[[4,4,1],[4,1,4],[1,4,4]]], #zigzag
+                [[[1,1,1],[1,4,1],[1,1,1]]], #rectangle
+                [[[1,4,4],[1,4,4],[1,1,1]], [[4,4,1],[4,4,1],[1,1,1]], [[1,1,1],[4,4,1],[4,4,1]], [[1,1,1],[4,4,1],[4,4,1]]], #L
+                [[[1,4,1],[4,1,4]],[[1,4,4],[4,1,4],[1,4,4]],[[4,1,4],[1,4,1]],[[4,1,4],[1,4,4],[4,1,4]]], #T zigzag
+                [[[1,1,4],[4,1,1]],[[4,1,4],[1,1,4],[1,4,4]]]],#z
+                #Niveau 3
+                [[[[1,4,4],[1,1,1],[1,4,4]],[[4,1,4],[4,1,4],[1,1,1]],[[4,4,1],[1,1,1],[4,4,1]],[[1,1,1],[4,1,4],[4,1,4]]],
+                [[[1,4,4],[1,1,4],[1,1,1]],[[4,4,1],[4,1,1],[1,1,1]],[[1,1,1],[4,1,1],[4,4,1]],[[1,1,1],[1,1,4],[1,4,4]]],
+                [[[1,4,1],[4,1,4],[1,4,1]]],
+                [[[4,1,4],[1,4,1],[4,1,4]]],
+                [[[1,1,4],[4,1,4],[1,1,4]],[[1,1,1],[1,4,1]],[[1,1,4],[1,4,4],[1,1,4]],[[1,4,1],[1,1,1]]],
+                [[[1,1,4],[4,1,1],[4,1,4]],[[4,1,4],[1,1,1],[1,4,4]],[[4,1,4],[1,1,4],[4,1,1]],[[4,4,1],[1,1,1],[4,1,4]]],
+                [[[1,4,4],[4,1,4]],[[4,1,4],[1,4,4]]]]] 
+    grid = []
+    bloc = [] 
+    loop_ingame = True
+    reponse = 0
+    score = 0
+    tentative = 0
+    difficulty = 0
+
+def play_sound():
+    #Fonction permettant de jouer le thème du jeu.
+    sound = True
+    while sound == True:
+        playsound.playsound('Theme.wav')
+sound_play = threading.Thread(target=play_sound)
+def game_over():
+    os.system("cls")
+    print(term.move_x(20)+ term.move_y(4) +"GAME OVER")
+    if score <= 1:
+        print(term.move_x(20)+ term.move_y(5) +"Pas terrible ! Vous avez réalisé un score de "+ str(score) + " point !")
+    else : 
+        print(term.move_x(20)+ term.move_y(5) +"Bravo ! Vous avez réalisé un score de "+ str(score) + " points !")
+    print(term.move_x(20)+ term.move_y(6) +"Essayer de battre votre record la prochaine fois!")
+    print(term.move_x(20) + "Choisissez une action")
+    print(term.move_x(20) + "1- Quitter le jeu")
+    choix_gameover = int(input(term.move_x(20)))
+    if choix_gameover == 1:
+        sys.exit()
+def home(reponse):
+    #Fonction permettant le lancement de l'écran d'accueil
+    sound_play.start()
+    global path, reponse3
+    while reponse != 2 :
+        #Accueil dans le menu du jeu
+        print(term.move_x(20) +"╔══════════════════════════════════════╗")
+        print(term.move_x(20) +"║     Bienvenue sur le jeu TETRIS      ║")
+        print(term.move_x(20) +"╚══════════════════════════════════════╝")
+        print(term.move_x(18) + "Choisissez une action en entrant 1,2 ou 3 :\n")
+        print(term.move_x(25) + "1 - Afficher les règles du jeu \n")
+        print(term.move_x(25) + "2 - Commencer une nouvelle partie \n")
+ 
+        reponse = int(input())
+        while reponse < 0 or reponse > 2:
+            reponse = int(input(term.move_x(18) + " Le chiffre n'est pas reconnu veuillez réessayer : ") )
+        end = -1
+        #Affiche les règles du jeu
+        if reponse == 1 :
+            while end == -1:
+                os.system("cls")    
+                print(term.move_x(20) +"╔══════════════════════════════════════╗")
+                print(term.move_x(20) +"║             Règles du jeu            ║")
+                print(term.move_x(20) +"╚══════════════════════════════════════╝")
+                print("Le but de ce tétris est de completer un maximum de lignes et de colonnes afin d'engendrer un maximum de points.")
+                print("Le jeu fonctionne par palier, plus le score est élevée, plus les blocs seront compliqués à poser.")
+                print("Il y a 3 palliers : Le premier allant de 0 à 100, le deuxième de 101 à 250 puis le dernier de 251 à l'infini.")
+                print("Vous ne pouvez pas placer un bloc sur une case déjà prise ou à l'exterieur du plateau.")
+                print("Afin de poser le bloc, il est important de prendre comme repaire la case du" + term.red(" coin inférieur gauche du bloc."))
+                z=0
+                k=0
+                while k <3:
+                    for j in range(len(list_bloc[0][5][0][1])):
+                        if list_bloc[0][5][0][1][j] == 1:
+                            print(term.move_x(45 + z ) + term.move_y(9+k) + "■", end=" ")
+                        else:
+                            print(term.move_x(45 + z ) + term.move_y(9+k) + ". ", end="")
+                        z += 2
+                    k+=1
+                    z = 0
+                print(term.move_x(45) + term.move_y(11) + term.red("■ "))
+                print("Lorsque vous completez plusieurs lignes ou colonnes à la fois, un bonus de point s'applique.\n")
+                print("Appuyer 1 pour revenir au menu principal :")
+                end = int(input())
+                os.system("cls")
+        #Nous redirige vers le jeu
+        if reponse == 2 :
+            os.system("cls")
+            #Nous permet de choisir le plateau
+            print(term.move_x(20) +"╔══════════════════════════════════════╗")
+            print(term.move_x(20) +"║           Choix du plateau           ║")
+            print(term.move_x(20) +"╚══════════════════════════════════════╝")
+            print("Quelle forme de plateau voulez-vous ? Choisissez en entrant le chiffre correspondant : \n")
+            print(term.move_x(35) + "1 - Losange")
+            print(term.move_x(35) + "2 - Cercle")
+            print(term.move_x(35) + "3 - Triangle ")
+            path = int(input())
+            while path < 1 or path > 3:
+                path = int(input("Veuillez vérifier que votre chiffre est correct et réessayez "))
+            if path == 1:
+                print("Vous avez choisi le losange, Bonne chance !!\n")
+            elif path == 2:
+                print("Vous avez choisi le Cercle, Bonne chance !!\n")
+            elif path == 3:
+                print("Vous avez choisi le Triangle, Bonne chance !! \n")
+            os.system("cls")
+            
+            #Nous permet de choisir le mode de jeu
+            print(term.move_x(20) +"╔══════════════════════════════════════╗")
+            print(term.move_x(20) +"║             Mode de jeu              ║")
+            print(term.move_x(20) +"╚══════════════════════════════════════╝")
+            print(term.move_x(18) + "Choisissez un mode de jeu en entrant 1 ou 2 :\n")
+            print(term.move_x(25) + "1 - Choix manuel des blocs ")
+            print(term.move_x(25) + "2 - 3 blocs sélectionnés aléatoirement \n")
+            reponse3 = int(input())
+            while reponse3 < 0 or reponse3 > 2:
+                reponse3 = int(input(term.move_x(35) + " Le chiffre n'est pas reconnu veuillez réessayer ") )
+            os.system('cls')
+def menu():
+    os.system("cls")
+    print("Choisissez l'action à effectuer")
+    print("1- Reprendre le jeu")
+    print("2- Sauvegarder le jeu")
+    print("3- Quitter le jeu")
+    reponse_menu = int(input())
+    if reponse_menu == 1:
+        "loop.game()"
+    elif reponse_menu== 2:
+        save_game(grid)
+    elif reponse_menu == 3:
+        sys.exit()
+
+def read_grid(path, grid):
+    # Fonction permettant à partir du fichier texte de remplir la matrice grid selon la forme du plateau choisie
+    if path == 1:
+        with open(r"losange.txt", "r") as f1:
+            contenus = f1.readlines()
+    elif path == 2:
+        with open(r"cercle.txt", "r") as f1:
+            contenus = f1.readlines()
+    elif path == 3 :
+        with open(r"triangle.txt", "r") as f1:
+            contenus = f1.readlines()
+    for ligne in contenus:
+        L = ligne.split(" ")
+        L[-1] = L[-1][:-1] #Supprimer l'anti slash n
+        grid.append(L)
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            try:
+                grid[i][j]=int(grid[i][j]) # Transforme les 1, 0 sous forme de caractère en matrice afin de simplifier son utilisation plus tard
+            except :
+                pass # Permet de pas prendre en compte le " " à la fin de la matrice
+        
+def print_grid(grid):
+    #Fonction permettant d'affiche le plateau du jeu
+    print_score()  # Présence des deux fonctions permettant d'afficher le score et le nombre de tentative, on les met dans la fonction grid afin qu'elle soit toujours mis à jour à l'écran
+    print_tentative() 
+    #Affiche le plateau de jeu    
+    print(term.move_x(0)+ term.move_y(1) +"   a b c d e f g h i j k l m n o p q r s")
+    print("  ╔══════════════════════════════════════╗")
+    c = 'A'
+    for i in range(len(grid)):
+        print(c,"║", end="")
+        for j in range(len(grid[i])):
+            if grid[i][j] == 0:
+                print(" ", end=" ")
+            elif grid[i][j] == 1:
+                print(".", end=" ")
+            elif grid[i][j] == 2:
+                print("■", end=" ")
+        if path == 3:
+            print(term.move_x(41) + "║")
+        else :
+            print(term.move_x(41) + "║")
+        c = chr(ord(c) + 1)
+    print("  ╚══════════════════════════════════════╝")
+def print_score():
+    #Fonction permettant d'afficher le score
+    print(term.move_x(45) + term.move_y(1) +"╔═══════════════════════╗")
+    print(term.move_x(54)+ term.move_y(2) +"SCORE : " + str(score))
+    print(term.move_x(45)+ term.move_y(3) +"╚═══════════════════════╝")    
+def print_tentative():
+    #Fonction permettant d'afficher le nombre de tentative restant
+    print(term.move_x(45) + term.move_y(5) + "Tentative : " +"❤ "*(3-tentative))
+
+def select_bloc(reponse3):
+    #Fonction permettant d'afficher à l'utilisateur les blocs possibles selon le mode de jeu choisi
+    global n, alea1
+    m=k= 0
+    x = 45
+    alea1=0
+    #Permet d'afficher tous les blocs de jeu
+    if reponse3 == 1: 
+        print(term.move_x(45) + term.move_y(15)  + "Veuillez selectionner un bloc : \n")
+        for h in range(len(list_bloc[difficulty])):
+            print(term.move_x(x) + term.move_y(13)+ str(h+1))
+            for i in range(len(list_bloc[difficulty][h][0])):
+                for j in range(len(list_bloc[difficulty][h][0][i])):
+                    if list_bloc[difficulty][h][0][i][j] == 1:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + "■", end=" ")
+                    else:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + " ", end="")
+                    m += 2
+                k+=1
+                m = 0    
+                print()
+            k=0
+            x += 10    
+        
+        #Permet d'ajouter dans la matrice "bloc" le bloc choisi par l'utilisateur 
+        n = int(input(term.move_x(45) + term.move_y(16)))
+        while n <= 0 or n>7:     
+            print(term.move_x(45) + "Veuillez saisir une valeur valide ")
+            n = int(input(term.move_x(45)))
+
+    #Affiche à l'utilisateur les blocs possibles si le mode de jeu aléatoire est choisi
+    if reponse3 == 2:
+        print(term.move_x(45) + term.move_y(15)  + "Veuillez selectionner un bloc : \n")
+        cpt = 0
+        alea = [] # Initialisation du matrice aléatoire permettant de mettre les blocs choisi aléatoirement afin qu'on puisse les récuperer plus tard
+        
+        while cpt <3: #Permettant l'affichage de 3 blocs
+            alea1 = random.randint(0,6) #Génération aléatoire de l'id du bloc choisi
+            alea.append(alea1) #On ajoute le bloc aléatoire dans la matrice "alea"
+            for i in range(len(list_bloc[difficulty][alea1][0])):
+                print(term.move_x(x) + term.move_y(13)+ str(cpt+1))
+                for j in range(len(list_bloc[difficulty][alea1][0][i])):
+                    if list_bloc[difficulty][alea1][0][i][j] == 1:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + "■", end=" ")
+                    else:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + " ", end="")
+                    m += 2
+                k+=1
+                m = 0    
+                print()
+            k=0
+            x += 8 
+            cpt +=1
+        
+        #Ajouter dans la matrice "liste_bloc" le bloc aléatoire choisi par l'utilisateur
+        n = int(input(term.move_x(45) + term.move_y(16)))
+        while n <= 0 or n>3:     
+            print(term.move_x(45) + "Veuillez saisir une valeur valide : ")
+            n = int(input(term.move_x(45)))
+        alea1=alea[n-1]
+def rotate_bloc(n, alea1):
+    #Fonction permettant d'afficher à l'utilisateur les différentes rotations du bloc choisi
+    m=k=0
+    x = 45
+    os.system("cls")
+    print_grid(grid)
+    
+    #Permet d'afficher toutes les rotations du bloc
+    print(term.move_x(45) + term.move_y(15)  + "Veuillez selectionner une rotation : \n")
+    if reponse3 == 1:
+        for h in range(len(list_bloc[difficulty][n-1])):
+            print(term.move_x(x) + term.move_y(13) + str(h+1))
+            for i in range(len(list_bloc[difficulty][n-1][h])):
+                for j in range(len(list_bloc[difficulty][n-1][h][i])):
+                    if list_bloc[difficulty][n-1][h][i][j] == 1:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + "■", end=" ")
+                    else:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + " ", end="")
+                    m += 2
+                k+=1
+                m = 0    
+                print()
+            k=0
+            x += 10 
+        
+        #Ajouter dans la matrice "liste_bloc" le bloc choisi par l'utilisateur 
+        
+        l = int(input(term.move_x(45) + term.move_y(16)))
+        while l <= 0 or l>  len(list_bloc[difficulty][n-1]):
+            print(term.move_x(45) + "Veuillez saisir une valeur valide : ")
+            l = int(input(term.move_x(45)))
+        
+        if l <= 4:   
+            for i in range(len(list_bloc[difficulty][n-1][l-1])):
+                bloc.append(list_bloc[difficulty][n-1][l-1][i])
+            os.system("cls")
+            print_grid(grid)
+            
+        #Afficher le bloc choisi par l'utilisateur, toujours à droite du plateau
+            print(term.move_x(45) + term.move_y(7)  + "Vous avez choisi :")
+            for i in range(len(list_bloc[difficulty][n - 1][l-1])):
+                for j in range(len(list_bloc[difficulty][n - 1][l-1][i])):
+                    if list_bloc[difficulty][n - 1][l-1][i][j] == 1:
+                        print(term.move_x(45 + m ) + "■", end=" ")
+                    else:
+                        print(term.move_x(45 + m) + " ", end="")
+                    m += 2
+                m = 0
+                print()
+
+    if reponse3 == 2:
+        for h in range(len(list_bloc[difficulty][alea1])):
+            print(term.move_x(x) + term.move_y(13) + str(h+1))
+            for i in range(len(list_bloc[difficulty][alea1][h])):
+                for j in range(len(list_bloc[difficulty][alea1][h][i])):
+                    if list_bloc[difficulty][alea1][h][i][j] == 1:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + "■", end=" ")
+                    else:
+                        print(term.move_x(x + m ) + term.move_y(8+k) + " ", end="")
+                    m += 2
+                k+=1
+                m = 0    
+                print()
+            k=0
+            x += 8 
+        
+        #Ajouter dans la matrice "bloc" le bloc choisi par l'utilisateur 
+        l = int(input(term.move_x(45) + term.move_y(16)))
+        while l <= 0 or l>  len(list_bloc[difficulty][alea1]):
+            print(term.move_x(45) + "Veuillez saisir une valeur valide : ")
+            l = int(input(term.move_x(45)))
+        
+        if l <= 4:   
+            for i in range(len(list_bloc[difficulty][alea1][l-1])):
+                bloc.append(list_bloc[difficulty][alea1][l-1][i])
+            os.system("cls")
+            print_grid(grid)
+            
+        #Afficher le bloc choisi par l'utilisateur, toujours à droite du plateau
+            print(term.move_x(45) + term.move_y(7) + "Vous avez choisi :")
+            for i in range(len(list_bloc[difficulty][alea1][l-1])):
+                for j in range(len(list_bloc[difficulty][alea1][l-1][i])):
+                    if list_bloc[difficulty][alea1][l-1][i][j] == 1:
+                        print(term.move_x(45 + m ) + "■", end=" ")
+                    else:
+                        print(term.move_x(45 + m) + " ", end="")
+                    m += 2
+                m = 0
+                print()
+        elif n == 8:
+            menu()
+
+def valid_position(grid, bloc):
+    global Valid_pos, Xi, Yi
+    Valid_pos = True
+    #On demande à l'utilisateur de choisir les coordonnées de là où il souhaite placer le bloc
+    print(term.move_x(45) + term.move_y(15)  + "Veuillez saisir la ligne souhaitée en miniscule : ")
+    x = input(term.move_x(45) + term.move_y(16))
+    
+    if path ==3:
+        while x < 'a' or x > 'j':
+            print(term.move_x(45) + "Veuillez saisir une lettre valide : ")
+            x = input(term.move_x(45))
+    else : 
+        while x < 'a' or x > 't':
+            print(term.move_x(45) + "Veuillez saisir une lettre valide : ")
+            x = input(term.move_x(45))
+    
+    print(term.move_x(45) +"Veuillez saisir la colonne souhaitée miniscule : ")
+    y = input(term.move_x(45))
+    while y < 'a' or y > 's':
+        print(term.move_x(45) + "Veuillez saisir une lettre valide : ")
+        y = input(term.move_x(45))
+                      
+    X = Xi= ord(x)-97 #Etant donné qu'on rentre une chaine de caractère, on souhaite la convertir en entier afin de l'utiliser dans une matrice
+    Y= Yi = ord(y)-97
+    
+    X = X - len(bloc)+ 1
+    for i in range(len(bloc)):
+        if Valid_pos == False:
+            break
+        #On va additionner le bloc choisi avec les coordonnées de la grid dans la zone du bloc sélectionnée
+        for j in range(len(bloc[i])):
+            if (bloc[i][j] + grid[X][Y] == 3) or (bloc[i][j] + grid[X][Y] == 0) or (bloc[i][j] + grid[X][Y] == 1): #On élimine tous les cas de figure qui pourraient poser problème
+                Valid_pos = False
+                break
+            if bloc[i][j] + grid[X][Y] == 2: #Seul une somme = à 2 permet de valider la position
+                Valid_pos = True
+            Y += 1  
+        X += 1
+        Y -= 3
+
+def emplace_bloc(grid, bloc, Xi, Yi, Valid_pos):
+    #Permet de poser le bloc et de l'afficher
+    global tentative, Testjeu
+    Xi = Xi - len(bloc) + 1
+    #Pose du nouveau bloc autorisé
+    if Valid_pos == True:
+        for i in range(len(bloc)):
+            for j in range(len(bloc[i])):
+                if bloc[i][j] + grid[Xi][Yi] == 2: 
+                   grid[Xi][Yi] = grid[Xi][Yi]+1 #On va rajouter 1 à l'interieur de la grid dans la position du bloc autorisé afin qu'elle soit notée comme "pleine"
+                Yi += 1  
+            Xi += 1
+            Yi -= 3
+        tentative = 0        
+    else : 
+        #Si la position est invalidée, cela va incrementer la variable tentative de 1 et si elle depasse 2, le jeu est game over
+        if tentative < 2 :
+            tentative = tentative + 1
+            print(term.move_x(45)+ term.move_y(6) +"Vous ne pouvez pas poser le bloc ici !")
+            
+            time.sleep(2)
+        else :
+            game_over()
+                 
+def row_state(grid):
+    global row_valid, row_test
+    #Permet de savoir si une ligne est complète ou non
+    row_valid = [i for i in range(len(grid)) if all(grid[i][j] != 1 for j in range(len(grid[0])))]
+    if len(row_valid) == 0:
+        row_test = False
+    else :
+        row_test = True
+def row_clear(grid, row_test, row_valid):
+    #Si la ligne est complète, on va jouer un petit son le signalant puis afficher la ligne complète et ensuite la supprimer
+        
+    if row_test == True:
+        print_grid(grid)
+        playsound.playsound('line_completed.wav')
+        for i in range(len(row_valid)):
+            print(i)
+            for j in range((len(grid))):
+                for k in range((len(grid[j]))):
+                        if grid[row_valid[i]][k] == 2 :
+                            grid[row_valid[i]][k] = 1  
+
+        for i in range(len(row_valid)):
+            for k in range(row_valid[i], 0, -1): # Nous permettre de faire descendre toutes les lignes se trouvant en haut de la ligne complété d'une unité vers le bas
+                for j in range(len(grid[k])):
+                    if grid[k-1][j] == 2 and grid[k][j] ==1:
+                            grid[k][j] = 2
+                            grid[k-1][j] = 1
+                            
+
+def colonne_state(grid):
+    #Permet de recuperer toutes les colonnes qui sont remplies
+    global colonne_test, columns_valid
+    columns_valid = [i for i in range(len(grid[0])) if all(grid[j][i] != 1 for j in range(len(grid)))]
+    if len(columns_valid) == 0:
+        colonne_test = False
+    else :
+        colonne_test = True
+def colonne_clear(grid, colonne_test, columns_valid):
+    #Permet de supprimer les colonnes remplies
+    if colonne_test == True:
+        print_grid(grid)
+        playsound.playsound('line_completed.wav')
+        for i in range(len(columns_valid)):
+            for j in range((len(grid))):
+                    if grid[j][columns_valid[i]] == 2 :
+                        grid[j][columns_valid[i]] = 1  
+
+
+def update_score(row_test, row_valid):
+    #Permet de mettre à jour le score puis d'augmenter le niveau quand cela est nécessaire
+    global score, difficulty
+    if row_test == True:
+        for i in range(len(row_valid)):
+            for j in range(len(grid[row_valid[i]])):
+                if grid[row_valid[i]][j] == 2:
+                    score = score + 1*len(row_valid)
+    if colonne_test == True:
+        for i in range(len(columns_valid)):
+            for j in range((len(grid))):
+                    if grid[j][columns_valid[i]] == 2 :
+                        score = score + 1*len(columns_valid)
+    if score > 100:
+        difficulty = 1
+    if score > 250:
+        difficulty = 2
+        
+def save_game(grid):
+    os.system("cls")
+    save_choice = int(input("A quel emplacement voulez-vous sauvegarder. Saisissez 1, 2 ou 3"))
+    
+    if save_choice == 1:
+        with open(r"save_1.txt", "w") as f1:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    f1.write(str(grid[i][j])+ " ")
+                f1.write("\n")
+        with open(r"score_save_1.txt", "w") as f2:
+            f2.write(str(score))
+    elif save_choice == 2:
+        with open(r"save_2.txt", "w") as f1:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    f1.write(str(grid[i][j])+ " ")
+                f1.write("\n")
+        with open(r"score_save_2.txt", "w") as f2:
+            f2.write(str(score))
+    elif save_choice == 3:
+        with open(r"save_3.txt", "w") as f1:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    f1.write(str(grid[i][j]) + " ")
+                f1.write("\n")
+        with open(r"score_save_3.txt", "w") as f2:
+            f2.write(str(score))
+
+while loop_game == True:
+    os.system("cls")
+    values()
+    home(reponse) 
+    read_grid(path, grid)
+    print_grid(grid)
+    select_bloc(reponse3)
+    print(bloc)
+    while loop_ingame == True:
+        rotate_bloc(n, alea1)
+        valid_position(grid, bloc)
+        emplace_bloc(grid, bloc, Xi, Yi, Valid_pos)
+        for i in range(len(grid)): #C'est un système pas du tout optimisé mais j'ai pas réussi à régler le problème qui fait que lorsque 2 lignes ou colonnes sont validées en meme temps, il en élimine qu'une seule. Ainsi cette solution me permet de vérifier pour vraiment toutes les lignes
+            row_state(grid)
+            colonne_state(grid)
+            update_score(row_test, row_valid)
+            row_clear(grid, row_test, row_valid)
+            colonne_clear(grid, colonne_test, columns_valid)
+        bloc = []
+        os.system('cls')
+        print_grid(grid)
+        select_bloc(reponse3)
+        
